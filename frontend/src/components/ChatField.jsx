@@ -18,7 +18,7 @@ export function ChatField({recipient, token, socket, setChats}) {
             message, recipient, token
         })
         // eslint-disable-next-line react/prop-types
-        if (message.length > 0 && recipient.publictoken.length > 0) {
+        if (message.length > 0 && recipient.publictoken && recipient.publictoken.length > 0) {
             // eslint-disable-next-line react/prop-types
             socket.emit("chat", {
                 chat: encrypt({chat: message, sw: token.switcher}),

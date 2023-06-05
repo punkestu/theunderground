@@ -1,28 +1,45 @@
 import {useEffect, useState} from "react";
-import {io} from 'socket.io-client';
 import {KeyForm} from "./components/KeyForm.jsx";
 import {RecipientForm} from "./components/RecipientForm.jsx";
 import {RegisterForm} from "./components/RegisterForm.jsx";
 import {UserProfile} from "./components/UserProfile.jsx";
 import {BodyChat} from "./components/BodyChat.jsx";
+import {ChatField} from "./components/ChatField.jsx";
+
+import {socket} from "./socket.js";
+
+function decrypt({chat, sw}) {
+    chat = atob(chat);
+    let res = "";
+    for (let i = 0; i < chat.length; i++) {
+        res += String.fromCharCode(chat.charCodeAt(i) - parseInt(sw[(sw.length - i) % 10]));
+    }
+    console.log("decrypt", chat.length, res.length);
+    return res;
+}
 
 function App() {
-    const URL = 'http://localhost:3000';
     const [token, setToken] = useState(undefined);
     const [recipient, setRecipient] = useState("");
-    const [message, setMessage] = useState("");
+    const [chats, setChats] = useState([]);
     useEffect(() => {
         if (token) {
-            io(URL);
+            socket.on(token.privatetoken, (data) => {
+                setChats(prevChats => [...prevChats, {
+                    from: data.from,
+                    chat: decrypt({chat: data.chat, sw: token.switcher}),
+                    publictoken: data.token
+                }]);
+            });
         }
-    });
+    }, [token]);
     return (
         <div className="h-screen">
             {!token && <RegisterForm/>}
             <div
                 className={`${token ? "h-10" : "h-[calc(100%-3.5rem)]"} flex items-center ${token ? "justify-between" : "justify-center"} px-4 py-8 bg-black`}>
                 {!token ?
-                    <KeyForm setToken={setToken}/>
+                    <KeyForm setToken={setToken} socket={socket}/>
                     :
                     <>
                         <RecipientForm setRecipient={setRecipient}/>
@@ -32,14 +49,8 @@ function App() {
             </div>
             {token &&
                 <>
-                    <BodyChat/>
-                    <form className={"h-12 bg-black flex items-center gap-4 p-4"}>
-                        <input type="text" value={message} onChange={(e) => {
-                            setMessage(e.target.value)
-                        }} className={"flex-grow p-2 rounded-xl"}/>
-                        <button className={"px-4 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-xl"}>Kirim
-                        </button>
-                    </form>
+                    <BodyChat chats={chats}/>
+                    <ChatField setChats={setChats} recipient={recipient} socket={socket} token={token}/>
                 </>
             }
         </div>

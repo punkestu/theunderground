@@ -4,8 +4,8 @@ import axios from "axios";
 function resolveAndDownloadBlob(response) {
     let filename = 'credential.key';
     filename = decodeURI(filename);
-    const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
+    const url = `data:application/vnd.apple.keynote;charset=utf-8,${response}`;
     link.href = url;
     link.setAttribute('download', filename);
     document.body.appendChild(link);
@@ -20,9 +20,9 @@ export function RegisterForm() {
         e.preventDefault();
         if (username.length > 0) {
             axios(`http://localhost:3000/register?username=${username}`, {
-                responseType: 'blob'
             }).then(res => {
-                resolveAndDownloadBlob(res);
+                console.log()
+                resolveAndDownloadBlob(res.data);
                 setUsername("");
             });
         }else{

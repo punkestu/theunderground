@@ -1,4 +1,7 @@
-export function KeyForm({setToken}) {
+import {io} from 'socket.io-client';
+import {socket} from "../socket.js";
+// eslint-disable-next-line react/prop-types
+export function KeyForm({setToken, socket}) {
 	const login = (e) => {
 		const formData = new FormData();
 		formData.append('key', e.target.files[0]);
@@ -6,14 +9,17 @@ export function KeyForm({setToken}) {
 			method: 'POST',
 			body: formData
 		};
-		fetch('http://localhost:3000', requestOptions)
+		fetch('http://localhost:3000/login', requestOptions)
 			.then(response => {
 				if (response.ok) {
 					return response.json();
 				}
 				throw new Error("Key tidak valid");
 			})
-			.then(data => setToken(data))
+			.then(data => {
+				setToken(data);
+				socket.connect();
+			})
 			.catch(error => alert(error));
 	}
 	return (
@@ -25,8 +31,7 @@ export function KeyForm({setToken}) {
 					<h1 className={"text-center font-bold text-xl flex items-end"}>upload .key here to login</h1>
 				</div>
 			</div>
-			<input type="file" name="key" onChange={login} id="key"
-				   className={"h-full w-full opacity-0 absolute top-0"}/>
+			<input type="file" name="key" onChange={login} id="key" className={"h-full w-full opacity-0 absolute top-0"}/>
 		</div>
 	);
 }

@@ -17,7 +17,7 @@ export function RecipientForm({setRecipient}) {
 				throw new Error("Recipient tidak valid");
 			})
 			.then(data => {
-				setRecipient(data.publictoken);
+				setRecipient(data);
 				setUsername(data.username);
 			})
 			.catch(error => alert(error));

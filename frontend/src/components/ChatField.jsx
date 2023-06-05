@@ -14,20 +14,25 @@ export function ChatField({recipient, token, socket, setChats}) {
     const [message, setMessage] = useState("");
     const sendChat = (e) => {
         e.preventDefault();
-        console.log({
-            message, recipient, token
-        })
-        // eslint-disable-next-line react/prop-types
-        if (message.length > 0 && recipient.publictoken && recipient.publictoken.length > 0) {
+        if (recipient.publictoken && recipient.publictoken.length > 0) {
             // eslint-disable-next-line react/prop-types
-            socket.emit("chat", {
-                chat: encrypt({chat: message, sw: token.switcher}),
-                token: token.publictoken,
-                recipient: recipient.publictoken
-            });
-            // eslint-disable-next-line react/prop-types
-            setChats(prevChats => [...prevChats, {to: recipient.username, chat: message, publictoken: recipient.publictoken}]);
-            setMessage("");
+            if (message.length > 0) {
+                // eslint-disable-next-line react/prop-types
+                socket.emit("chat", {
+                    chat: encrypt({chat: message, sw: token.switcher}),
+                    token: token.publictoken,
+                    recipient: recipient.publictoken
+                });
+                // eslint-disable-next-line react/prop-types
+                setChats(prevChats => [...prevChats, {
+                    to: recipient.username,
+                    chat: message,
+                    publictoken: recipient.publictoken
+                }]);
+                setMessage("");
+            }
+        }else{
+            alert("Cek your recipient");
         }
     }
     return (

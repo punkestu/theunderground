@@ -3,9 +3,10 @@ import {useState} from "react";
 function encrypt({chat, sw}) {
     let res = "";
     for (let i = 0; i < chat.length; i++) {
-        res += String.fromCharCode(chat.charCodeAt(i) + parseInt(sw[i % 10]));
+        res += String.fromCharCode(chat.charCodeAt(i) + parseInt(sw[i % 10]) % 256);
     }
-    console.log("encrypt", chat.length, res.length);
+    console.log(res);
+    // console.log("encrypt", chat.length, res.length);
     return btoa(res);
 }
 

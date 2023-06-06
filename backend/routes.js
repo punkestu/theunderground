@@ -4,6 +4,7 @@ const genKey = require("./machine/genKey");
 const getKey = require("./machine/getKey");
 
 const multer = require("multer");
+const {genWatermarked, extractPlainWatermarked} = require("./lib/watermark");
 const upload = multer({dest: 'tmp/key/'});
 
 route.post("/public", upload.single("recipient"), function (req, res) {
@@ -13,10 +14,11 @@ route.post("/public", upload.single("recipient"), function (req, res) {
             console.log(`error: ${error.message}`);
         });
         readableStream.on('data', (chunk) => {
-            const key = getKey(chunk).split("-");
-            if (key[0] === "pub" && key[3] === "pub\x00") {
+            const key = extractPlainWatermarked({watermarked: getKey(chunk)});
+            if (key.watermark[0] === "pub\x00" && key.watermark[1] === "pub") {
+                const plain = key.res.split(("-"));
                 const publictoken = chunk;
-                const username = key[2];
+                const username = plain[1];
                 fs.unlinkSync(req.file.destination + req.file.filename);
                 return res.send({
                     publictoken,
@@ -39,12 +41,23 @@ route.post("/login", upload.single("key"), (req, res) => {
         });
         readableStream.on('data', (chunk) => {
             try {
-                const key = getKey(chunk).split("-");
-                if (key[0] === "bimakeren" && key[3] === "bimaganteng\x00") {
-                    const privatetoken = genKey({plain: `priv-${key[1]}-priv`});
-                    const publictoken = genKey({plain: `pub-${key[1]}-${key[2]}-pub`});
-                    const switcher = key[1];
-                    const username = key[2];
+                const key = extractPlainWatermarked({watermarked: getKey(chunk)});
+                if (key.watermark[0] === "bimakeren\x00" && key.watermark[1] === "bimaganteng") {
+                    const plain = key.res.split("-");
+                    const privatetoken = genKey({
+                        plain: genWatermarked({
+                            plain: plain[0],
+                            watermark: ["priv", "priv"]
+                        })
+                    });
+                    const publictoken = genKey({
+                        plain: genWatermarked({
+                            plain: `${plain[0]}-${plain[1]}`,
+                            watermark: ["pub", "pub"]
+                        })
+                    });
+                    const switcher = plain[0];
+                    const username = plain[1];
                     fs.unlinkSync(req.file.destination + req.file.filename);
                     return res.send({
                         privatetoken,
@@ -55,7 +68,7 @@ route.post("/login", upload.single("key"), (req, res) => {
                 } else {
                     return res.sendStatus(400);
                 }
-            } catch (e){
+            } catch (e) {
                 return res.sendStatus(400);
             }
         });
@@ -66,7 +79,10 @@ route.post("/login", upload.single("key"), (req, res) => {
 
 route.get("/register", function (req, res) {
     const token = genKey({
-        plain: `bimakeren-${(new Date().getTime() * 111 - 270803).toString()}-${req.query.username}-bimaganteng`
+        plain: genWatermarked({
+            plain: `${(new Date().getTime() * 111 - 270803).toString()}-${req.query.username}`,
+            watermark: ["bimakeren", "bimaganteng"]
+        })
     });
     res.send(token);
 });
